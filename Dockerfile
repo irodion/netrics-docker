@@ -16,8 +16,12 @@ RUN curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/scr
 RUN sudo apt-get install speedtest
 
 FROM modules as netrics
-# Create netrics user
-RUN useradd -ms /bin/bash netrics
+# Create netrics user with explicit UID/GID for Podman compatibility
+RUN groupadd -g 1000 netrics && \
+    useradd -u 1000 -g 1000 -ms /bin/bash netrics
+
+# Fix ping permissions for rootless containers (Podman compatibility)
+RUN chmod u+s /bin/ping
 USER netrics
 WORKDIR /home/netrics
 
@@ -34,16 +38,19 @@ RUN netrics init serv
 # Need to create this path or else the daemon won't run
 RUN mkdir -p /home/netrics/.local/state/netrics
 
-# Create directory where Netrics writes data files (configurable)
-RUN mkdir -p /home/netrics/result
+# Note: Do NOT create the result path directory - netrics will create it as needed
 
 # Copy local configuration files (instead of using defaults)
-COPY ./config/measurements.yaml /home/netrics/.config/netrics/measurements.yaml
-COPY ./config/defaults.yaml /home/netrics/.config/netrics/defaults.yaml
-COPY ./config/measurements/netrics-* /home/netrics/
-COPY ./config/measurements/modules/* /home/netrics/
-RUN cp /home/netrics/netrics-* /home/netrics/.local/bin/
-RUN cp /home/netrics/*.py /home/netrics/.local/lib/python3.9/site-packages/netrics/measurement
+# First copy as root, then change ownership to netrics user
+COPY --chown=netrics:netrics ./config/measurements.yaml /home/netrics/.config/netrics/measurements.yaml
+COPY --chown=netrics:netrics ./config/defaults.yaml /home/netrics/.config/netrics/defaults.yaml
+COPY --chown=netrics:netrics ./config/measurements/netrics-* /home/netrics/
+COPY --chown=netrics:netrics ./config/measurements/modules/* /home/netrics/
+
+# Set execute permissions and copy to proper locations
+RUN chmod +x /home/netrics/netrics-* && \
+    cp /home/netrics/netrics-* /home/netrics/.local/bin/ && \
+    cp /home/netrics/*.py /home/netrics/.local/lib/python3.9/site-packages/netrics/measurement
 
 
 # Run Netrics daemon
