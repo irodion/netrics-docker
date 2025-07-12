@@ -100,8 +100,14 @@ def parse_output(output):
     if not output:
         return None
     
+    dl_bytes = 0
+    ul_bytes = 0
+    result = None
+    
     try:
         for obj in output.split("\n")[:-1]:
+            if not obj.strip():
+                continue
 
             response = json.loads(obj)
             key = response.get("Key", None)
@@ -117,7 +123,7 @@ def parse_output(output):
                     else:
                         ul_bytes = num_bytes
 
-            if (not key) & (not value):
+            if (not key) and (not value):
                 result = {
                     'download': response["Download"]["Value"],
                     'upload': response["Upload"]["Value"],
@@ -132,9 +138,12 @@ def parse_output(output):
     except (KeyError, ValueError, TypeError) as exc:
         print("output parsing error")
         return None
-    else:
+    
+    if result:
         result["meta"]["total_bytes_consumed"] = dl_bytes + ul_bytes
         return result
+    
+    return None
 
 
 if __name__ == '__main__':
