@@ -124,14 +124,15 @@ def parse_output(output):
                         ul_bytes = num_bytes
 
             if (not key) and (not value):
+                # Handle the actual NDT7 output format
                 result = {
-                    'download': response["Download"]["Value"],
-                    'upload': response["Upload"]["Value"],
-                    'downloadretrans': response["DownloadRetrans"]["Value"],
-                    'minrtt': response["MinRTT"]["Value"],
+                    'download': response["Download"]["Throughput"]["Value"],
+                    'upload': response["Upload"]["Throughput"]["Value"],
+                    'downloadretrans': response["Download"]["Retransmission"]["Value"],
+                    'minrtt': response["Download"]["Latency"]["Value"],
                     'server': response["ServerFQDN"],
                     'server_ip': response["ServerIP"],
-                    'downloaduuid': response["DownloadUUID"],
+                    'downloaduuid': response["Download"]["UUID"],
                     'meta': {}
                 }
     
