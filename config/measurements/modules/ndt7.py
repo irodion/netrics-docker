@@ -104,6 +104,17 @@ def parse_output(output):
     ul_bytes = 0
     result = None
     
+    # Network quality metrics from TCPInfo
+    tcp_metrics = {
+        'rtt_var': None,         # RTT variance in microseconds
+        'total_retrans': None,   # Total number of retransmissions
+        'reord_seen': None,      # Number of reorder events seen
+        'snd_buf_limited': None, # Send buffer limited events
+        'pacing_rate': None,     # Pacing rate in bytes per second
+        'delivery_rate': None,   # Delivery rate in bytes per second
+        'min_rtt': None          # Minimum RTT in microseconds
+    }
+    
     try:
         for obj in output.split("\n")[:-1]:
             if not obj.strip():
@@ -122,6 +133,17 @@ def parse_output(output):
                         dl_bytes = num_bytes
                     else:
                         ul_bytes = num_bytes
+                
+                # Capture network quality metrics from server-side TCP info
+                elif origin == 'server' and test == 'download' and 'TCPInfo' in value:
+                    tcp_info = value['TCPInfo']
+                    tcp_metrics['rtt_var'] = tcp_info.get('RTTVar')
+                    tcp_metrics['total_retrans'] = tcp_info.get('TotalRetrans')
+                    tcp_metrics['reord_seen'] = tcp_info.get('ReordSeen')
+                    tcp_metrics['snd_buf_limited'] = tcp_info.get('SndBufLimited')
+                    tcp_metrics['pacing_rate'] = tcp_info.get('PacingRate')
+                    tcp_metrics['delivery_rate'] = tcp_info.get('DeliveryRate')
+                    tcp_metrics['min_rtt'] = tcp_info.get('MinRTT')
 
             if (not key) and (not value):
                 # Handle the actual NDT7 output format
@@ -133,6 +155,14 @@ def parse_output(output):
                     'server': response["ServerFQDN"],
                     'server_ip': response["ServerIP"],
                     'downloaduuid': response["Download"]["UUID"],
+                    # Add network quality metrics
+                    'rtt_var': tcp_metrics['rtt_var'],
+                    'total_retrans': tcp_metrics['total_retrans'],
+                    'reord_seen': tcp_metrics['reord_seen'],
+                    'snd_buf_limited': tcp_metrics['snd_buf_limited'],
+                    'pacing_rate': tcp_metrics['pacing_rate'],
+                    'delivery_rate': tcp_metrics['delivery_rate'],
+                    'tcp_min_rtt': tcp_metrics['min_rtt'],
                     'meta': {}
                 }
     
