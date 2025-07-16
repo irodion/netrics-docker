@@ -99,3 +99,20 @@ speed-ookla:
   param:
     accept_license: true
     timeout: 80
+
+cloudflare:
+  #
+  # Run Cloudflare speed test every 5 minutes
+  # Offset from other tests to avoid interference
+  #
+  schedule: "H/5 * * * *"
+
+  #
+  # Prevent concurrent execution with other tests
+  #
+  scheduling:
+    tenancy: 1
+  param:
+    timeout: 60
+    output_bps: false  # Use Mbps by default
+    debug: false       # Disable debug logging by default
