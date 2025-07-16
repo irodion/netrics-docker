@@ -28,6 +28,9 @@ WORKDIR /home/netrics
 # Install Netrics and run as user
 RUN pip install netrics-measurements
 
+# Install cloudflarepycli for Cloudflare speed test
+RUN pip install cloudflarepycli==2.0.2
+
 # Add Netrics path to environment
 ENV PATH="/home/netrics/.local/bin:$PATH"
 
